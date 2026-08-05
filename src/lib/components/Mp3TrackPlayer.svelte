@@ -95,6 +95,7 @@
 
 		audioElementReference.addEventListener('loadedmetadata', updateProgressValuesFromAudioElement);
 		audioElementReference.addEventListener('timeupdate', updateProgressValuesFromAudioElement);
+		audioElementReference.addEventListener('canplay', tryAutoplayAudio, { once: true });
 
 		audioElementReference.addEventListener('playing', () => {
 			isAudioPlayingBoolean = true;
@@ -298,7 +299,9 @@
 	}
 
 	onMount(() => {
-		tryAutoplayAudio();
+		if (shouldAutoplay) {
+			ensureAudioElementExistsAndHasListeners();
+		}
 	});
 
 	onDestroy(() => {

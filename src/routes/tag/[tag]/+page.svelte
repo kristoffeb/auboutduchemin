@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { renderRichTextText } from '$lib/richtext';
+
 	export let data;
 
 	const tag = data.tag;
@@ -30,7 +32,7 @@
 					{/if}
 
 					{#if post.content.meta_description}
-						<p>{post.content.meta_description}</p>
+						<p>{renderRichTextText(post.content.meta_description)}</p>
 					{/if}
 
 					<p class="meta">

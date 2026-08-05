@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { renderRichText } from '$lib/richtext';
+	import { renderRichTextMarkup, renderRichTextText } from '$lib/richtext';
 	import Mp3TrackPlayer from '$lib/components/Mp3TrackPlayer.svelte';
 
 	export let data;
@@ -8,10 +8,67 @@
 	const postObject = data.post;
 	const postContent = postObject?.content ?? {};
 
-	const renderedRichTextHtml = postContent.text ? renderRichText(postContent.text) : '';
-	const externalLinksArray = Array.isArray(postContent.external_links)
-		? postContent.external_links
-		: [];
+	function normalizeStringArray(value: unknown) {
+		if (!Array.isArray(value)) return [];
+
+		return value
+			.map((item: unknown) => String(item).trim())
+			.filter((item): item is string => Boolean(item));
+	}
+
+	function extractLinkHref(value: unknown) {
+		if (typeof value === 'string') return value.trim();
+		if (!value || typeof value !== 'object') return '';
+
+		const linkValue = value as {
+			cached_url?: unknown;
+			url?: unknown;
+			filename?: unknown;
+			href?: unknown;
+			linktype?: unknown;
+		};
+
+		const rawHref = String(
+			linkValue.url ?? linkValue.cached_url ?? linkValue.filename ?? linkValue.href ?? ''
+		).trim();
+
+		if (!rawHref) return '';
+
+		if (String(linkValue.linktype ?? '') === 'story' && !rawHref.startsWith('/')) {
+			return `/${rawHref}`;
+		}
+
+		return rawHref;
+	}
+
+	function extractLinkLabel(value: unknown, href: string) {
+		if (!value || typeof value !== 'object') return href;
+
+		const linkValue = value as { label?: unknown; title?: unknown; text?: unknown };
+		return String(linkValue.label ?? linkValue.title ?? linkValue.text ?? href).trim() || href;
+	}
+
+	function normalizeLinkItems(value: unknown) {
+		if (!Array.isArray(value)) return [];
+
+		return value
+			.map((linkObject: unknown) => {
+				const href = extractLinkHref(
+					(linkObject as { link?: unknown; url?: unknown; cached_url?: unknown; filename?: unknown; href?: unknown })?.link ??
+						(linkObject as { link?: unknown; url?: unknown; cached_url?: unknown; filename?: unknown; href?: unknown })?.url ??
+						linkObject
+				);
+				const label = extractLinkLabel(linkObject, href);
+
+				return href ? { href, label } : null;
+			})
+			.filter((linkItem): linkItem is { href: string; label: string } => linkItem !== null);
+	}
+
+	const renderedRichTextHtml = postContent.text ? renderRichTextMarkup(postContent.text) : '';
+	const linkItemsArray = normalizeLinkItems(postContent.links ?? postContent.external_links);
+	const metaDescriptionHtml = renderRichTextMarkup(postContent.meta_description);
+	const metaDescriptionText = renderRichTextText(postContent.meta_description);
 
 	const artistNameString = String(postContent.artist ?? '');
 	const songTitleString = String(postContent.song ?? '');
@@ -74,9 +131,9 @@
 <svelte:head>
 	<title>{postContent.title} — My Blog</title>
 
-	{#if postContent.meta_description}
-		<meta name="description" content={postContent.meta_description} />
-		<meta property="og:description" content={postContent.meta_description} />
+	{#if metaDescriptionText}
+		<meta name="description" content={metaDescriptionText} />
+		<meta property="og:description" content={metaDescriptionText} />
 	{/if}
 
 	{#if postContent.title}
@@ -111,22 +168,59 @@
 		/>
 	{/if}
 
-	{#if externalLinksArray.length > 0}
-		<div class="greenLinksRow">
-			{#each externalLinksArray as linkObject}
-				{#if linkObject?.url}
-					<a class="greenLinkItem" href={linkObject.url} target="_blank" rel="noopener noreferrer">
-						{linkObject.label ?? linkObject.url}
-					</a>
-				{/if}
-			{/each}
-		</div>
-	{/if}
-
 	<article class="contentBody">
 		{@html renderedRichTextHtml}
 	</article>
+
+	{#if postContent.meta_description || linkItemsArray.length > 0}
+		<section class="postExtras" aria-label="Post extras">
+			<section class="postExtrasPanel">
+				{#if postContent.meta_description}
+					<section class="postMetaDescription" aria-label="Meta description">
+						<div>{@html metaDescriptionHtml}</div>
+					</section>
+				{/if}
+
+				{#if linkItemsArray.length > 0}
+					<nav class="postLinks" aria-label="Links">
+						<ul class="postLinksList">
+							{#each linkItemsArray as linkItem, index}
+								<li class="postLinksListItem">
+									<a
+										class="postInlineLink"
+										href={linkItem.href}
+										target="_blank"
+										rel="noopener noreferrer"
+									>
+										{linkItem.label}
+									</a>
+									{#if index < linkItemsArray.length - 1}
+										<span class="postLinkSeparator" aria-hidden="true">·</span>
+									{/if}
+								</li>
+							{/each}
+						</ul>
+					</nav>
+				{/if}
+			</section>
+		</section>
+	{/if}
 </main>
 
 <style>
+	.postInlineLink {
+		text-decoration: none;
+		color: var(--accent);
+		transition: color 400ms var(--motionEase);
+	}
+
+	.postInlineLink:hover {
+		color: color-mix(in srgb, var(--accent) 80%, transparent);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.postInlineLink {
+			transition: none;
+		}
+	}
 </style>

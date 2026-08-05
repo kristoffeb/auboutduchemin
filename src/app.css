@@ -64,7 +64,7 @@ a:hover {
 main.postPage {
 	max-width: var(--maxWidth);
 	margin: 42px auto;
-	padding: 0 22px 136px;
+	padding: 0 22px 80px;
 	position: relative;
 }
 
@@ -186,6 +186,130 @@ main.postPage h1 {
 	border-left: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
 	font-size: 1.03em;
 	color: color-mix(in srgb, var(--ink) 80%, transparent);
+}
+
+.postExtras {
+	margin-top: 60px;
+	pointer-events: none;
+	display: flex;
+	justify-content: flex-start;
+	width: 100%;
+}
+
+.postExtrasPanel {
+	margin-left: 0;
+	text-align: left;
+	font-size: 0.72rem;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	width: 100%;
+	max-width: 100%;
+	pointer-events: auto;
+}
+
+.postExtrasPinned {
+	position: fixed;
+	right: 24px;
+	bottom: 24px;
+	z-index: 30;
+	margin-top: 0;
+}
+
+.postExtrasSpacer {
+	width: 100%;
+}
+
+.categoryPills {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	justify-content: flex-start;
+}
+
+.categoryPill {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.3rem 0.58rem;
+	border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+	border-radius: 0.45rem;
+	background: color-mix(in srgb, var(--paper) 78%, var(--accent) 22%);
+	font-family: var(--fontUi);
+	font-size: 0.62rem;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	text-decoration: none;
+	transition:
+		color 220ms var(--motionEase),
+		background-color 220ms var(--motionEase),
+		border-color 220ms var(--motionEase),
+		box-shadow 220ms var(--motionEase);
+}
+
+.categoryPill:hover {
+	text-decoration: none;
+	background: color-mix(in srgb, var(--paper) 64%, var(--accent) 36%);
+	border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.categoryPill:focus-visible {
+	text-decoration: none;
+	outline: 2px solid color-mix(in srgb, var(--accent) 38%, transparent);
+	outline-offset: 2px;
+}
+
+.postMetaDescription {
+	max-width: 100%;
+	margin-top: 8px;
+	margin-left: 0;
+	width: 100%;
+	font-style: italic;
+	color: color-mix(in srgb, var(--ink) 84%, transparent);
+	text-align: left;
+	font-size: 13px;
+}
+
+.postMetaDescription :global(a) {
+	color: var(--accent);
+}
+
+.postLinks {
+	max-width: 100%;
+	margin-top: 0;
+	margin-left: 0;
+	width: 100%;
+	text-align: left;
+	font-size: 1em;
+}
+
+.postLinksList {
+	display: inline;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	font-family: var(--fontUi);
+	font-size: inherit;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+}
+
+.postLinksListItem {
+	display: inline;
+}
+
+.postInlineLink {
+	color: var(--accent);
+}
+
+.postLinkSeparator {
+	padding: 0 0.45rem;
+	color: color-mix(in srgb, var(--accent) 54%, transparent);
 }
 
 .readingProgress {

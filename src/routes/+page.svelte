@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { renderRichTextText } from '$lib/richtext';
+
 	export let data;
 	const post = data.latest;
 </script>
@@ -21,7 +23,7 @@
 				<img src={post.content.cover.filename} />
 			{/if}
 
-			<p>{post.content.meta_description}</p>
+			<p>{renderRichTextText(post.content.meta_description)}</p>
 		</div>
 	{:else}
 		<p>No posts yet.</p>
