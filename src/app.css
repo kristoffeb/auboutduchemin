@@ -1,146 +1,292 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,700&family=Archivo:wght@500;700&display=swap');
+
 :root {
-	--maxWidth: 760px;
-	--accentGreen: #3b6d2a;
-	--mutedText: rgba(0, 0, 0, 0.55);
+	--maxWidth: 820px;
+	--textMeasure: 66ch;
+	--titleMin: 2.12rem;
+	--titleFluid: 5.8vw;
+	--titleMax: 4.5rem;
+	--bodyMin: 1.06rem;
+	--bodyFluid: 1.24vw;
+	--bodyMax: 1.18rem;
+	--h2Min: 1.34rem;
+	--h2Fluid: 1.94vw;
+	--h2Max: 1.84rem;
+	--h3Min: 1.08rem;
+	--h3Fluid: 1.34vw;
+	--h3Max: 1.26rem;
+	--motionEase: cubic-bezier(0.22, 1, 0.36, 1);
+	--motionDuration: 460ms;
+	--fontDisplay: 'Newsreader', 'Palatino Linotype', Palatino, serif;
+	--fontBody: 'Fraunces', 'Palatino Linotype', Palatino, serif;
+	--fontUi: 'Archivo', 'Avenir Next', 'Segoe UI', sans-serif;
+	--ink: #15201d;
+	--paper: #eef2eb;
+	--paperShaded: #e4eae2;
+	--accent: #2f6759;
+	--mutedText: rgba(21, 32, 29, 0.66);
+	--linkUnderline: rgba(47, 103, 89, 0.32);
 }
 
 body {
 	margin: 0;
-	font-family: Georgia, 'Times New Roman', serif;
-	line-height: 1.65;
-	background: white;
-	color: #111;
+	font-family: var(--fontBody);
+	line-height: 1.7;
+	background:
+		radial-gradient(circle at 12% 14%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 46%),
+		radial-gradient(circle at 88% 10%, color-mix(in srgb, var(--ink) 8%, transparent), transparent 34%),
+		linear-gradient(180deg, var(--paper) 0%, var(--paperShaded) 100%);
+	color: var(--ink);
 }
 
 a {
-	color: var(--accentGreen);
+	color: var(--accent);
 	text-decoration: none;
 }
 
 a:hover {
 	text-decoration: underline;
+	text-decoration-thickness: 1.5px;
+	text-decoration-color: var(--linkUnderline);
+	text-underline-offset: 0.18em;
 }
 
 main.postPage {
 	max-width: var(--maxWidth);
-	margin: 40px auto;
-	padding: 0 18px 60px;
+	margin: 42px auto;
+	padding: 0 22px 136px;
+	position: relative;
 }
 
 .backLink {
-	font-family: system-ui, sans-serif;
-	font-size: 0.9rem;
-	margin-bottom: 18px;
-	opacity: 0.8;
+	font-family: var(--fontUi);
+	font-size: 0.82rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	margin: 0 0 18px;
+	opacity: 0.7;
 }
 
 .postTitle {
-	font-family: system-ui, sans-serif;
-	font-size: 2rem;
+	font-family: var(--fontDisplay);
+	font-size: clamp(var(--titleMin), var(--titleFluid), var(--titleMax));
+	line-height: 0.96;
 	font-weight: 700;
-	color: var(--accentGreen);
-	margin-bottom: 16px;
+	letter-spacing: -0.02em;
+	width: 100%;
+	max-width: none;
+	color: var(--ink);
+	margin: 0 0 26px;
 }
 
 .heroSection {
 	position: relative;
-	margin-bottom: 20px;
+	margin: 0 0 34px;
+	left: 50%;
+	width: min(1080px, calc(100vw - 28px));
+	transform: translateX(-50%);
 }
 
 .heroImage {
 	width: 100%;
 	display: block;
+	border-radius: 1px;
+	box-shadow: 0 18px 60px rgba(18, 18, 18, 0.18);
 }
 
 .heroOverlayArtist {
 	position: absolute;
-	right: 20px;
+	right: 18px;
 	bottom: 16px;
-	font-family: system-ui, sans-serif;
+	font-family: var(--fontUi);
 	font-weight: 800;
-	font-size: clamp(28px, 6vw, 56px);
+	font-size: clamp(22px, 5.2vw, 48px);
 	color: rgba(255, 255, 255, 0.92);
 	text-transform: uppercase;
-	letter-spacing: 0.05em;
+	letter-spacing: 0.08em;
 	text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6);
-}
-
-.spotifyPlayerSection {
-	margin: 20px 0 30px;
 }
 
 .tagsContainer {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 8px;
-	margin-bottom: 10px;
+	gap: 10px;
+	margin: 0 0 12px;
 }
 
 .tagLink {
-	background: rgba(59, 109, 42, 0.14);
-	padding: 4px 10px;
-	border-radius: 6px;
-	font-family: system-ui, sans-serif;
-	font-size: 0.9rem;
+	background: color-mix(in srgb, var(--accent) 14%, transparent);
+	padding: 5px 11px;
+	border-radius: 999px;
+	font-family: var(--fontUi);
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.07em;
 	font-weight: 600;
-	color: var(--accentGreen);
+	color: var(--accent);
 }
 
 .metadataLine {
-	font-family: system-ui, sans-serif;
-	font-size: 0.95rem;
+	font-family: var(--fontBody);
+	font-size: clamp(1.02rem, 1.2vw, 1.18rem);
+	line-height: 1.56;
 	color: var(--mutedText);
-	margin-bottom: 14px;
+	max-width: 58ch;
+	margin: 0 0 18px;
 }
 
 .greenLinksRow {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 18px;
-	margin-bottom: 20px;
-	font-family: system-ui, sans-serif;
+	gap: 16px;
+	margin: 0 0 24px;
+	font-family: var(--fontUi);
 	font-weight: 700;
-	font-size: 0.95rem;
+	font-size: 0.84rem;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
 }
 
 .greenLinkItem {
-	color: var(--accentGreen);
+	color: var(--accent);
+}
+
+.contentBody {
+	max-width: var(--textMeasure);
+	font-family: var(--fontBody);
+	font-size: clamp(var(--bodyMin), var(--bodyFluid), var(--bodyMax));
+	line-height: 1.8;
+	text-wrap: pretty;
+	counter-reset: chapter;
 }
 
 .contentBody p {
-	margin-bottom: 16px;
+	margin: 0 0 1.22em;
 }
 
-/* --- Minimal Spotify track embed --- */
-
-.spotifyPlayerSection {
-	margin: 16px 0 24px;
+.contentBody p:first-of-type::first-letter {
+	float: left;
+	font-size: 3.45em;
+	line-height: 0.84;
+	margin: 0.12em 0.08em 0 0;
+	font-weight: 500;
+	color: var(--accent);
 }
 
-.spotifyAccentBar {
-	height: 3px;
-	width: 90px;
-	background: var(--accentGreen);
-	border-radius: 999px;
-	margin-bottom: 12px;
-	opacity: 0.9;
+.contentBody :is(h2, h3) {
+	font-family: var(--fontUi);
+	font-weight: 700;
+	line-height: 1.1;
+	letter-spacing: -0.01em;
+	margin: 1.8em 0 0.68em;
 }
 
-.spotifyEmbedContainer {
-	border-radius: 12px;
-	overflow: hidden;
+.contentBody h2 {
+	font-size: clamp(var(--h2Min), var(--h2Fluid), var(--h2Max));
+	position: relative;
+	padding-top: 1.48em;
+	counter-increment: chapter;
+}
+
+.contentBody h2::before {
+	content: 'Chapter ' counter(chapter, decimal-leading-zero);
+	position: absolute;
+	left: 0;
+	top: 0;
+	font-family: var(--fontUi);
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.11em;
+	text-transform: uppercase;
+	color: color-mix(in srgb, var(--accent) 68%, transparent);
+}
+
+.contentBody h2::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 1.12em;
+	width: 58px;
+	height: 1px;
+	background: color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
+.contentBody h3 {
+	font-size: clamp(var(--h3Min), var(--h3Fluid), var(--h3Max));
+}
+
+.contentBody blockquote {
+	margin: 1.7em 0;
+	padding: 0.15em 0 0.15em 1.05em;
+	border-left: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+	font-size: 1.03em;
+	color: color-mix(in srgb, var(--ink) 80%, transparent);
+}
+
+.readingProgress {
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: 2px;
+	width: calc(var(--reading-progress, 0) * 1%);
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--accent) 82%, white),
+		color-mix(in srgb, var(--ink) 90%, transparent)
+	);
+	z-index: 40;
+	transition: width 170ms linear;
+}
+
+.revealBlock {
+	opacity: 0;
+	transform: translateY(8px);
 	transition:
-		transform 150ms ease,
-		box-shadow 150ms ease;
-	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+		opacity var(--motionDuration) var(--motionEase),
+		transform var(--motionDuration) var(--motionEase);
+	transition-delay: var(--reveal-delay, 0ms);
 }
 
-.spotifyEmbedContainer:hover {
-	transform: translateY(-2px);
-	box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1);
+.isVisible {
+	opacity: 1;
+	transform: translateY(0);
 }
 
-.spotifyIframe {
-	display: block;
-	border: 0;
+@media (max-width: 860px) {
+	main.postPage {
+		padding: 0 16px 142px;
+	}
+
+	.postTitle {
+		max-width: none;
+	}
+
+	.heroSection {
+		width: calc(100vw - 14px);
+	}
+
+	.contentBody {
+		font-size: clamp(1.01rem, 3.05vw, 1.1rem);
+		line-height: 1.74;
+	}
+
+	.contentBody h2 {
+		padding-top: 1.36em;
+	}
+
+	.contentBody h2::before {
+		font-size: 0.64rem;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.readingProgress {
+		transition: none;
+	}
+
+	.revealBlock {
+		opacity: 1;
+		transform: none;
+		transition: none;
+	}
 }
