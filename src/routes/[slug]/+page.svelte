@@ -9,7 +9,6 @@
 	const postContent = postObject?.content ?? {};
 
 	const renderedRichTextHtml = postContent.text ? renderRichText(postContent.text) : '';
-	const categoriesArray = Array.isArray(postContent.categories) ? postContent.categories : [];
 	const externalLinksArray = Array.isArray(postContent.external_links)
 		? postContent.external_links
 		: [];
@@ -92,16 +91,11 @@
 <main class="postPage">
 	<div class="readingProgress" aria-hidden="true" style={`--reading-progress:${readingProgress}%`}></div>
 
-	<p class="backLink">
-		<a href="/">← Home</a>
-	</p>
-
 	<h1 class="postTitle">{postContent.title}</h1>
 
 	{#if postContent.cover?.filename}
 		<section class="heroSection">
 			<img class="heroImage" src={postContent.cover.filename} alt={postContent.title} />
-			<div class="heroOverlayArtist">{artistNameString}</div>
 		</section>
 	{/if}
 
@@ -115,18 +109,6 @@
 			visualMode="rail"
 			ambientLabelString={artistNameString}
 		/>
-	{/if}
-
-	{#if categoriesArray.length > 0}
-		<div class="tagsContainer">
-			{#each categoriesArray as categoryName}
-				<a class="tagLink" href={'/tag/' + encodeURIComponent(categoryName)}>{categoryName}</a>
-			{/each}
-		</div>
-	{/if}
-
-	{#if postContent.meta_description}
-		<p class="metadataLine">{postContent.meta_description}</p>
 	{/if}
 
 	{#if externalLinksArray.length > 0}

@@ -9,8 +9,6 @@
 </svelte:head>
 
 <main>
-	<h1>My Blog</h1>
-
 	{#if post}
 		<div class="card">
 			<h2>

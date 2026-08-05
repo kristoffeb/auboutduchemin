@@ -11,8 +11,6 @@
 </svelte:head>
 
 <main>
-	<a href="/">← Home</a>
-
 	<h1>Tag: {tag}</h1>
 
 	{#if posts.length === 0}

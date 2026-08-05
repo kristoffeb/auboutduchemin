@@ -18,6 +18,7 @@
 	let hasAutoplayBeenBlockedBoolean = false;
 	let hasAutoplayBeenAttemptedBoolean = false;
 	let isMutedBoolean = false;
+	let shouldRestoreUnmutedStateAfterAutoplayBoolean = false;
 
 	let audioDurationSecondsNumber = 0;
 	let audioCurrentTimeSecondsNumber = 0;
@@ -80,6 +81,7 @@
 		audioDurationSecondsNumber = 0;
 		audioCurrentTimeSecondsNumber = 0;
 		progressPercentageNumber = 0;
+		shouldRestoreUnmutedStateAfterAutoplayBoolean = false;
 
 		stopProgressAnimationLoop();
 	}
@@ -100,6 +102,11 @@
 			hasAudioErrorBoolean = false;
 			hasAutoplayBeenBlockedBoolean = false;
 			startProgressAnimationLoop();
+
+			if (shouldRestoreUnmutedStateAfterAutoplayBoolean) {
+				shouldRestoreUnmutedStateAfterAutoplayBoolean = false;
+				isMutedBoolean = false;
+			}
 		});
 
 		audioElementReference.addEventListener('pause', () => {
@@ -147,6 +154,11 @@
 		audioElementReference.play().catch(() => {
 			hasAudioErrorBoolean = true;
 			hasAutoplayBeenBlockedBoolean = true;
+			shouldRestoreUnmutedStateAfterAutoplayBoolean = false;
+			isMutedBoolean = false;
+			if (audioElementReference) {
+				audioElementReference.muted = false;
+			}
 			isAudioLoadingBoolean = false;
 			isAudioPlayingBoolean = false;
 			stopProgressAnimationLoop();
@@ -154,6 +166,7 @@
 	}
 
 	function toggleMutedState() {
+		shouldRestoreUnmutedStateAfterAutoplayBoolean = false;
 		isMutedBoolean = !isMutedBoolean;
 
 		if (audioElementReference) {
@@ -170,12 +183,19 @@
 		ensureAudioElementExistsAndHasListeners();
 		if (!audioElementReference) return;
 
+		shouldRestoreUnmutedStateAfterAutoplayBoolean = !isMutedBoolean;
+		isMutedBoolean = true;
 		audioElementReference.volume = 0.72;
-		audioElementReference.muted = isMutedBoolean;
+		audioElementReference.muted = true;
 		isAudioLoadingBoolean = true;
 
 		audioElementReference.play().catch(() => {
 			hasAutoplayBeenBlockedBoolean = true;
+			shouldRestoreUnmutedStateAfterAutoplayBoolean = false;
+			isMutedBoolean = false;
+			if (audioElementReference) {
+				audioElementReference.muted = false;
+			}
 			isAudioLoadingBoolean = false;
 			isAudioPlayingBoolean = false;
 			stopProgressAnimationLoop();
