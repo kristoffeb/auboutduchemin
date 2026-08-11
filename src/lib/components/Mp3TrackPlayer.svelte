@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
+	import type { Writable } from 'svelte/store';
+	import { get } from 'svelte/store';
 
 	export let artistNameString: string;
 	export let songTitleString: string;
@@ -8,6 +10,10 @@
 	export let shouldAutoplay = false;
 	export let visualMode: 'card' | 'rail' | 'chapter' = 'card';
 	export let ambientLabelString = 'Now listening';
+	/** When defined, signals that this player participates in feed-level playback coordination. */
+	export let isActive: boolean | undefined = undefined;
+	/** Shared store across all feed players: true = user wants audio to be playing. */
+	export let feedPlaybackStore: Writable<boolean> | undefined = undefined;
 
 	let audioElementReference: HTMLAudioElement | null = null;
 	let timelineContainerElementReference: HTMLDivElement | null = null;
@@ -86,6 +92,98 @@
 		stopProgressAnimationLoop();
 	}
 
+	// ── Volume fade helpers ──────────────────────────────────────────────────
+	let volumeFadeFrameId: number | null = null;
+
+	function cancelVolumeFade() {
+		if (volumeFadeFrameId !== null) {
+			cancelAnimationFrame(volumeFadeFrameId);
+			volumeFadeFrameId = null;
+		}
+	}
+
+	function fadeVolumeTo(target: number, durationMs: number, onComplete?: () => void) {
+		cancelVolumeFade();
+		if (!audioElementReference) {
+			onComplete?.();
+			return;
+		}
+
+		const startVolume = audioElementReference.volume;
+		const startTime = performance.now();
+
+		const step = (now: number) => {
+			if (!audioElementReference) {
+				onComplete?.();
+				return;
+			}
+			const progress = Math.min(1, (now - startTime) / durationMs);
+			audioElementReference.volume = startVolume + (target - startVolume) * progress;
+			if (progress < 1) {
+				volumeFadeFrameId = requestAnimationFrame(step);
+			} else {
+				volumeFadeFrameId = null;
+				onComplete?.();
+			}
+		};
+
+		volumeFadeFrameId = requestAnimationFrame(step);
+	}
+
+	// ── Feed transition helpers ──────────────────────────────────────────────
+	/** Called when this player should take over playback (isActive true, store = playing). */
+	function startFeedTransitionPlayback() {
+		ensureAudioElementExistsAndHasListeners();
+		if (!audioElementReference || isAudioPlayingBoolean) return;
+
+		cancelVolumeFade();
+		if (!isMutedBoolean) {
+			audioElementReference.volume = 0;
+		}
+		isAudioLoadingBoolean = true;
+
+		audioElementReference.play().then(() => {
+			if (!isMutedBoolean) fadeVolumeTo(0.72, 450);
+		}).catch(() => {
+			isAudioLoadingBoolean = false;
+			isAudioPlayingBoolean = false;
+		});
+	}
+
+	/** Called when this player loses active status while playing. */
+	function deactivateWithFade() {
+		if (!isAudioPlayingBoolean || !audioElementReference) return;
+
+		if (!isMutedBoolean) {
+			const restoreVolume = audioElementReference.volume || 0.72;
+			fadeVolumeTo(0, 300, () => {
+				audioElementReference?.pause();
+				if (audioElementReference) audioElementReference.volume = restoreVolume;
+			});
+		} else {
+			audioElementReference.pause();
+		}
+	}
+
+	// ── isActive reactive handler ────────────────────────────────────────────
+	let prevIsActive: boolean | undefined = undefined;
+
+	$: {
+		if (isActive !== undefined) {
+			if (prevIsActive !== undefined && isActive !== prevIsActive) {
+				if (!isActive) {
+					deactivateWithFade();
+				} else if (feedPlaybackStore && get(feedPlaybackStore)) {
+					startFeedTransitionPlayback();
+				}
+			}
+			prevIsActive = isActive;
+		}
+	}
+
+	/** True when this player is in feed mode and not the active post — hides fixed UI. */
+	$: isFeedHidden = isActive === false;
+
 	function ensureAudioElementExistsAndHasListeners() {
 		if (audioElementReference) return;
 
@@ -147,9 +245,15 @@
 
 		if (isAudioPlayingBoolean) {
 			audioElementReference.pause();
+			feedPlaybackStore?.set(false);
 			return;
 		}
 
+		feedPlaybackStore?.set(true);
+		cancelVolumeFade();
+		if (!isMutedBoolean) {
+			audioElementReference.volume = 0.72;
+		}
 		isAudioLoadingBoolean = true;
 
 		audioElementReference.play().catch(() => {
@@ -305,6 +409,8 @@
 	});
 
 	onDestroy(() => {
+		cancelVolumeFade();
+
 		if (pendingResumeFromUserGestureHandler) {
 			window.removeEventListener('pointerdown', pendingResumeFromUserGestureHandler as EventListener);
 			window.removeEventListener('keydown', pendingResumeFromUserGestureHandler as EventListener);
@@ -317,13 +423,16 @@
 </script>
 
 {#if isFixedLayout}
-	<div class="fixedPlayerContainer">
+	<div class="fixedPlayerContainer" class:isFeedHidden>
 		<button
 			class="playerButton"
+			class:isFeedHidden
 			type="button"
 			on:click={togglePlayback}
 			aria-pressed={isAudioPlayingBoolean}
 			aria-label={isAudioPlayingBoolean ? 'Pause track' : 'Play track'}
+			aria-hidden={isFeedHidden || undefined}
+			tabindex={isFeedHidden ? -1 : 0}
 		>
 			<div class="equalizerContainer" class:isPlaying={isAudioPlayingBoolean}>
 				<div class="equalizerBar" style="--bar-delay: 0ms"></div>
@@ -447,6 +556,11 @@
 		flex-direction: column;
 		z-index: 55;
 		pointer-events: none;
+		transition: opacity 280ms ease;
+	}
+
+	.fixedPlayerContainer.isFeedHidden {
+		opacity: 0;
 	}
 
 	.playerButton {
@@ -465,6 +579,10 @@
 		pointer-events: all;
 		transition: opacity 180ms ease;
 		z-index: 56;
+	}
+
+	.playerButton.isFeedHidden {
+		pointer-events: none;
 	}
 
 	.playerButton:focus-visible {

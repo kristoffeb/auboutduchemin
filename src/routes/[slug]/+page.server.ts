@@ -8,6 +8,6 @@ export async function entries() {
 }
 
 export async function load({ params }) {
-	const post = await getPost(params.slug);
-	return { post };
+	const [post, posts] = await Promise.all([getPost(params.slug), getAllPosts()]);
+	return { post, posts };
 }

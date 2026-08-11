@@ -61,14 +61,14 @@ a:hover {
 	text-underline-offset: 0.18em;
 }
 
-main.postPage {
+.postPage {
 	max-width: var(--maxWidth);
 	margin: 42px auto;
 	padding: 0 22px 80px;
 	position: relative;
 }
 
-main.postPage h1 {
+.postPage h1 {
 	margin-top: 140px;
 }
 
@@ -342,7 +342,7 @@ main.postPage h1 {
 }
 
 @media (max-width: 860px) {
-	main.postPage {
+.postPage {
 		padding: 0 16px 142px;
 	}
 

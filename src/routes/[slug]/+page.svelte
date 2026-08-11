@@ -1,129 +1,136 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { renderRichTextMarkup, renderRichTextText } from '$lib/richtext';
-	import Mp3TrackPlayer from '$lib/components/Mp3TrackPlayer.svelte';
+	import { writable } from 'svelte/store';
+	import { renderRichTextText } from '$lib/richtext';
+	import PostArticle from '$lib/components/PostArticle.svelte';
 
 	export let data;
 
-	const postObject = data.post;
-	const postContent = postObject?.content ?? {};
-
-	function normalizeStringArray(value: unknown) {
-		if (!Array.isArray(value)) return [];
-
-		return value
-			.map((item: unknown) => String(item).trim())
-			.filter((item): item is string => Boolean(item));
-	}
-
-	function extractLinkHref(value: unknown) {
-		if (typeof value === 'string') return value.trim();
-		if (!value || typeof value !== 'object') return '';
-
-		const linkValue = value as {
-			cached_url?: unknown;
-			url?: unknown;
-			filename?: unknown;
-			href?: unknown;
-			linktype?: unknown;
-		};
-
-		const rawHref = String(
-			linkValue.url ?? linkValue.cached_url ?? linkValue.filename ?? linkValue.href ?? ''
-		).trim();
-
-		if (!rawHref) return '';
-
-		if (String(linkValue.linktype ?? '') === 'story' && !rawHref.startsWith('/')) {
-			return `/${rawHref}`;
-		}
-
-		return rawHref;
-	}
-
-	function extractLinkLabel(value: unknown, href: string) {
-		if (!value || typeof value !== 'object') return href;
-
-		const linkValue = value as { label?: unknown; title?: unknown; text?: unknown };
-		return String(linkValue.label ?? linkValue.title ?? linkValue.text ?? href).trim() || href;
-	}
-
-	function normalizeLinkItems(value: unknown) {
-		if (!Array.isArray(value)) return [];
-
-		return value
-			.map((linkObject: unknown) => {
-				const href = extractLinkHref(
-					(linkObject as { link?: unknown; url?: unknown; cached_url?: unknown; filename?: unknown; href?: unknown })?.link ??
-						(linkObject as { link?: unknown; url?: unknown; cached_url?: unknown; filename?: unknown; href?: unknown })?.url ??
-						linkObject
-				);
-				const label = extractLinkLabel(linkObject, href);
-
-				return href ? { href, label } : null;
-			})
-			.filter((linkItem): linkItem is { href: string; label: string } => linkItem !== null);
-	}
-
-	const renderedRichTextHtml = postContent.text ? renderRichTextMarkup(postContent.text) : '';
-	const linkItemsArray = normalizeLinkItems(postContent.links ?? postContent.external_links);
-	const metaDescriptionHtml = renderRichTextMarkup(postContent.meta_description);
+	const post = data.post;
+	const allPosts = data.posts ?? [];
+	const currentSlug = post?.slug ?? '';
+	const postContent = post?.content ?? {};
 	const metaDescriptionText = renderRichTextText(postContent.meta_description);
 
-	const artistNameString = String(postContent.artist ?? '');
-	const songTitleString = String(postContent.song ?? '');
-	const mp3UrlString = String(postContent.mp3_file?.filename ?? '');
-	const hasTrackBoolean = Boolean(artistNameString && songTitleString && mp3UrlString);
+	// Build the feed starting from the current post. Use the richer single-post
+	// data for the first item; subsequent items come from the list fetch.
+	const startIndex = allPosts.findIndex((p: any) => p.slug === currentSlug);
+	const tail = startIndex >= 0 ? allPosts.slice(startIndex + 1) : [];
+	const posts: any[] = post ? [post, ...tail] : tail;
 
-	let readingProgress = 0;
+	/** Shared across all feed players: true while the user wants audio to keep playing. */
+	const feedPlaybackStore = writable(false);
+
+	let visiblePostsCount = post ? 1 : 0;
+	const visibleRatios = new Map<string, number>();
+	const postElements = new Map<string, HTMLElement>();
+	let nextPostObserver: IntersectionObserver | undefined;
+	let activePostObserver: IntersectionObserver | undefined;
+	let activeSlug = '';
+	let canLoadOnIntersection = true;
+	let lastObservedLoadNode: HTMLElement | undefined;
+
+	function setFeedPostElement(node: HTMLElement, postSlug: string) {
+		postElements.set(postSlug, node);
+		activePostObserver?.observe(node);
+
+		const h1 = node.querySelector('h1') as HTMLElement | null;
+		const loadTarget = h1 ?? node;
+
+		if (lastObservedLoadNode) {
+			nextPostObserver?.unobserve(lastObservedLoadNode);
+			canLoadOnIntersection = true;
+		}
+		lastObservedLoadNode = loadTarget;
+		nextPostObserver?.observe(loadTarget);
+
+		return {
+			destroy() {
+				activePostObserver?.unobserve(node);
+				nextPostObserver?.unobserve(loadTarget);
+				if (lastObservedLoadNode === loadTarget) lastObservedLoadNode = undefined;
+				postElements.delete(postSlug);
+				visibleRatios.delete(postSlug);
+			}
+		};
+	}
+
+	function updateVisiblePostUrl() {
+		if (typeof window === 'undefined') return;
+
+		let candidateSlug = '';
+		let candidateRatio = 0;
+
+		for (const [postSlug, ratio] of visibleRatios.entries()) {
+			if (ratio > candidateRatio) {
+				candidateSlug = postSlug;
+				candidateRatio = ratio;
+			}
+		}
+
+		if (!candidateSlug || candidateSlug === activeSlug) return;
+
+		activeSlug = candidateSlug;
+		document.documentElement.classList.remove('dark-transition');
+		window.dispatchEvent(new Event('scroll'));
+
+		const nextPathname = `/${candidateSlug}`;
+		if (window.location.pathname !== nextPathname) {
+			window.history.replaceState(window.history.state, '', nextPathname);
+		}
+	}
+
+	function loadNextPost() {
+		if (visiblePostsCount >= posts.length) return;
+		visiblePostsCount += 1;
+	}
 
 	onMount(() => {
 		document.documentElement.dataset.articleTheme = 'sage';
 
-		const updateReadingProgress = () => {
-			const documentElement = document.documentElement;
-			const scrollableHeight = documentElement.scrollHeight - window.innerHeight;
-
-			if (scrollableHeight <= 0) {
-				readingProgress = 0;
-				return;
-			}
-
-			readingProgress = Math.min(100, Math.max(0, (window.scrollY / scrollableHeight) * 100));
-		};
-
-		const revealObserver = new IntersectionObserver(
+		nextPostObserver = new IntersectionObserver(
 			(entries) => {
 				for (const entry of entries) {
-					if (entry.isIntersecting) {
-						entry.target.classList.add('isVisible');
-						revealObserver.unobserve(entry.target);
+					if (entry.isIntersecting && canLoadOnIntersection) {
+						canLoadOnIntersection = false;
+						loadNextPost();
+					}
+
+					if (!entry.isIntersecting) {
+						canLoadOnIntersection = true;
 					}
 				}
 			},
-			{ threshold: 0.2, rootMargin: '0px 0px -6% 0px' }
+			{ threshold: 0, rootMargin: '0px 0px 0px 0px' }
 		);
 
-		const revealableNodes = document.querySelectorAll(
-			'.contentBody p, .contentBody h2, .contentBody h3, .contentBody blockquote, .contentBody ul, .contentBody ol'
-		);
+		activePostObserver = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					const postSlug = (entry.target as HTMLElement).dataset.postSlug ?? '';
+					if (!postSlug) continue;
+					visibleRatios.set(postSlug, entry.isIntersecting ? entry.intersectionRatio : 0);
+				}
 
-		revealableNodes.forEach((node, index) => {
-			if (node instanceof HTMLElement) {
-				node.style.setProperty('--reveal-delay', `${Math.min(index * 26, 220)}ms`);
+				updateVisiblePostUrl();
+			},
+			{
+				threshold: [0.2, 0.35, 0.5, 0.65, 0.8],
+				rootMargin: '-10% 0px -32% 0px'
 			}
-			node.classList.add('revealBlock');
-			revealObserver.observe(node);
+		);
+
+		if (lastObservedLoadNode) {
+			nextPostObserver.observe(lastObservedLoadNode);
+		}
+
+		postElements.forEach((postElement) => {
+			activePostObserver?.observe(postElement);
 		});
 
-		updateReadingProgress();
-		window.addEventListener('scroll', updateReadingProgress, { passive: true });
-		window.addEventListener('resize', updateReadingProgress);
-
 		return () => {
-			window.removeEventListener('scroll', updateReadingProgress);
-			window.removeEventListener('resize', updateReadingProgress);
-			revealObserver.disconnect();
+			nextPostObserver?.disconnect();
+			activePostObserver?.disconnect();
 		};
 	});
 </script>
@@ -145,82 +152,42 @@
 	{/if}
 </svelte:head>
 
-<main class="postPage">
-	<div class="readingProgress" aria-hidden="true" style={`--reading-progress:${readingProgress}%`}></div>
-
-	<h1 class="postTitle">{postContent.title}</h1>
-
-	{#if postContent.cover?.filename}
-		<section class="heroSection">
-			<img class="heroImage" src={postContent.cover.filename} alt={postContent.title} />
-		</section>
-	{/if}
-
-	{#if hasTrackBoolean}
-		<Mp3TrackPlayer
-			{artistNameString}
-			{songTitleString}
-			{mp3UrlString}
-			isFixedLayout={true}
-			shouldAutoplay={true}
-			visualMode="rail"
-			ambientLabelString={artistNameString}
-		/>
-	{/if}
-
-	<article class="contentBody">
-		{@html renderedRichTextHtml}
-	</article>
-
-	{#if postContent.meta_description || linkItemsArray.length > 0}
-		<section class="postExtras" aria-label="Post extras">
-			<section class="postExtrasPanel">
-				{#if postContent.meta_description}
-					<section class="postMetaDescription" aria-label="Meta description">
-						<div>{@html metaDescriptionHtml}</div>
-					</section>
-				{/if}
-
-				{#if linkItemsArray.length > 0}
-					<nav class="postLinks" aria-label="Links">
-						<ul class="postLinksList">
-							{#each linkItemsArray as linkItem, index}
-								<li class="postLinksListItem">
-									<a
-										class="postInlineLink"
-										href={linkItem.href}
-										target="_blank"
-										rel="noopener noreferrer"
-									>
-										{linkItem.label}
-									</a>
-									{#if index < linkItemsArray.length - 1}
-										<span class="postLinkSeparator" aria-hidden="true">·</span>
-									{/if}
-								</li>
-							{/each}
-						</ul>
-					</nav>
-				{/if}
-			</section>
-		</section>
-	{/if}
-</main>
+{#if posts.length > 0}
+	<section class="infiniteFeed">
+		{#each posts.slice(0, visiblePostsCount) as feedPost (feedPost.slug)}
+			<div
+				class="feedPost"
+				data-post-slug={feedPost.slug}
+				data-background-transition-active={feedPost.slug === activeSlug ||
+				(!activeSlug && feedPost.slug === currentSlug)
+					? 'true'
+					: undefined}
+				use:setFeedPostElement={feedPost.slug}
+			>
+				<PostArticle
+					post={feedPost}
+					shouldAutoplay={feedPost.slug === currentSlug}
+					showReadingProgress={feedPost.slug === currentSlug && visiblePostsCount === 1}
+					isActive={feedPost.slug === activeSlug || (!activeSlug && feedPost.slug === currentSlug)}
+					{feedPlaybackStore}
+				/>
+			</div>
+		{/each}
+	</section>
+{:else}
+	<main>
+		<p>Post not found.</p>
+	</main>
+{/if}
 
 <style>
-	.postInlineLink {
-		text-decoration: none;
-		color: var(--accent);
-		transition: color 400ms var(--motionEase);
+	.infiniteFeed {
+		display: flex;
+		flex-direction: column;
+		gap: 70px;
 	}
 
-	.postInlineLink:hover {
-		color: color-mix(in srgb, var(--accent) 80%, transparent);
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.postInlineLink {
-			transition: none;
-		}
+	.feedPost {
+		position: relative;
 	}
 </style>
