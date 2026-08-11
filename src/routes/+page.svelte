@@ -2,12 +2,14 @@
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 	import PostArticle from '$lib/components/PostArticle.svelte';
+	import { buildNonRepeatingSeparatorIndices } from '$lib/post-separator';
 	import { renderRichTextText } from '$lib/richtext';
 
 	export let data;
 	const posts = data.posts ?? [];
 	const latestPost = posts[0] ?? null;
 	const metaDescriptionText = latestPost ? renderRichTextText(latestPost.content?.meta_description) : '';
+	const separatorIconIndices = buildNonRepeatingSeparatorIndices(posts);
 
 	/** Shared across all feed players: true while the user wants audio to keep playing. */
 	const feedPlaybackStore = writable(false);
@@ -145,7 +147,7 @@
 
 {#if latestPost}
 	<section class="infiniteFeed">
-		{#each posts.slice(0, visiblePostsCount) as post (post.slug)}
+		{#each posts.slice(0, visiblePostsCount) as post, postIndex (post.slug)}
 			<div
 				class="feedPost"
 				data-post-slug={post.slug}
@@ -157,10 +159,12 @@
 			>
 				<PostArticle
 					{post}
+					postSlug={post.slug}
 					shouldAutoplay={false}
 					showReadingProgress={false}
 					isActive={post.slug === activeSlug || (!activeSlug && post.slug === latestPost.slug)}
 					{feedPlaybackStore}
+					separatorIconIndex={separatorIconIndices[postIndex]}
 				/>
 			</div>
 		{/each}
