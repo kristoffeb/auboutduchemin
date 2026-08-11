@@ -75,3 +75,21 @@ export async function getPost(slug: string) {
 		return null;
 	}
 }
+
+export async function getStoryByPath(path: string) {
+	const token = getStoryblokToken();
+	if (!token) return null;
+
+	const normalizedPath = path.trim().replace(/^\/+|\/+$/g, '');
+	if (!normalizedPath) return null;
+
+	const url = `${API}/stories/${normalizedPath}?token=${token}`;
+
+	try {
+		const data = (await fetchJson(url)) as StoryblokSingleResponse;
+		return data.story ?? null;
+	} catch (error) {
+		console.error(`Failed to fetch story for path '${normalizedPath}' from Storyblok`, error);
+		return null;
+	}
+}
