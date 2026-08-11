@@ -1,8 +1,21 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { beforeNavigate } from '$app/navigation';
 	import '../app.css';
 	import Header from '$lib/Header.svelte';
 
 	let { children } = $props();
+	let isTransitioning = $state(false);
+
+	beforeNavigate(({ willUnload, to }) => {
+		if (!willUnload && to?.route.id !== null) {
+			isTransitioning = true;
+			// Reset after page loads
+			setTimeout(() => {
+				isTransitioning = false;
+			}, 300);
+		}
+	});
 
 	$effect(() => {
 		if (typeof window === 'undefined') return;
@@ -43,4 +56,16 @@
 
 <Header />
 
-{@render children()}
+<main class="page-content" class:transitioning={isTransitioning}>
+	{@render children()}
+</main>
+
+<style>
+	.page-content {
+		transition: opacity 300ms var(--motionEase);
+	}
+
+	.page-content.transitioning {
+		opacity: 0;
+	}
+</style>

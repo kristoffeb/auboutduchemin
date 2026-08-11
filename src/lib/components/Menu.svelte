@@ -11,6 +11,11 @@
 		isOpen = false;
 	}
 
+	function handleLinkClick() {
+		// Add a small delay to allow fade animation before navigation
+		closeMenu();
+	}
+
 	onMount(() => {
 		const handleEscape = (e: KeyboardEvent) => {
 			if (e.key === 'Escape' && isOpen) {
@@ -19,8 +24,28 @@
 		};
 
 		document.addEventListener('keydown', handleEscape);
-		return () => document.removeEventListener('keydown', handleEscape);
+
+		// Lock/unlock scrolling based on menu state
+		const updateScroll = () => {
+			if (isOpen) {
+				document.body.style.overflow = 'hidden';
+			} else {
+				document.body.style.overflow = '';
+			}
+		};
+
+		// Watch isOpen changes
+		updateScroll();
+
+		return () => {
+			document.removeEventListener('keydown', handleEscape);
+			document.body.style.overflow = '';
+		};
 	});
+
+	$: if (typeof document !== 'undefined') {
+		document.body.style.overflow = isOpen ? 'hidden' : '';
+	}
 </script>
 
 <button
@@ -30,44 +55,13 @@
 	on:click={toggleMenu}
 	title="Menu"
 >
-	<svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" class="menu-icon">
-		<!-- Top ornamental curve -->
-		<path
-			d="M8 8 Q30 2 52 8"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="1.5"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-		/>
-		<!-- Center decorative element -->
-		<g class="center-element">
-			<path
-				d="M12 20 Q30 14 48 20"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.8"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			/>
-			<path
-				d="M28 16 L32 24 M32 16 L28 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			/>
-		</g>
-		<!-- Bottom ornamental curve -->
-		<path
-			d="M8 32 Q30 38 52 32"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="1.5"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-		/>
+	<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="menu-icon" class:open={isOpen}>
+		<!-- Top line -->
+		<line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+		<!-- Middle line -->
+		<line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+		<!-- Bottom line -->
+		<line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
 	</svg>
 </button>
 
@@ -88,7 +82,7 @@
 			</button>
 
 			<nav class="menu-nav">
-				<a href="/about" class="menu-link" on:click={closeMenu}>à propos</a>
+				<a href="/about" class="menu-link" on:click={handleLinkClick}>à propos</a>
 			</nav>
 		</div>
 	</div>
@@ -113,16 +107,13 @@
 	}
 
 	.menu-icon {
-		width: 28px;
-		height: 20px;
-		transition:
-			transform 300ms cubic-bezier(0.35, 0.46, 0.15, 0.94),
-			opacity 300ms var(--motionEase);
+		width: 24px;
+		height: 24px;
+		transition: transform 300ms cubic-bezier(0.35, 0.46, 0.15, 0.94);
 	}
 
-	.center-element {
-		transform-origin: 30px 20px;
-		transition: transform 300ms cubic-bezier(0.35, 0.46, 0.15, 0.94);
+	.menu-icon.open {
+		transform: rotate(90deg);
 	}
 
 	.menu-overlay {
@@ -137,6 +128,7 @@
 		align-items: center;
 		justify-content: center;
 		animation: overlayFadeIn 300ms var(--motionEase) forwards;
+		overflow: hidden;
 	}
 
 	@keyframes overlayFadeIn {
@@ -156,7 +148,7 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: 60px 20px 20px;
+		padding: 80px 20px 20px;
 		animation: panelScaleIn 400ms cubic-bezier(0.35, 0.46, 0.15, 0.94) forwards;
 	}
 
@@ -173,12 +165,12 @@
 
 	.menu-close {
 		position: absolute;
-		top: 24px;
-		right: 24px;
+		top: 20px;
+		right: 20px;
 		background: none;
 		border: none;
 		cursor: pointer;
-		padding: 8px;
+		padding: 12px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -214,7 +206,8 @@
 		padding: 12px 0;
 		transition:
 			color 220ms var(--motionEase),
-			transform 220ms var(--motionEase);
+			transform 220ms var(--motionEase),
+			opacity 300ms var(--motionEase);
 		cursor: pointer;
 		border: none;
 		background: none;
@@ -225,9 +218,12 @@
 		transform: translateY(-2px);
 	}
 
+	.menu-link:active {
+		opacity: 0.7;
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.menu-icon,
-		.center-element,
 		.menu-overlay,
 		.menu-panel,
 		.menu-close,
