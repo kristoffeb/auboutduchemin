@@ -563,6 +563,24 @@
 		opacity: 0;
 	}
 
+	@media (max-width: 480px) {
+		.fixedPlayerContainer {
+			background-color: var(--paper);
+			background-image:
+				radial-gradient(
+					circle at 12% 14%,
+					color-mix(in srgb, var(--accent) 12%, transparent),
+					transparent 46%
+				),
+				radial-gradient(
+					circle at 88% 10%,
+					color-mix(in srgb, var(--ink) 8%, transparent),
+					transparent 34%
+				);
+			background-attachment: fixed;
+		}
+	}
+
 	.playerButton {
 		position: fixed;
 		left: 12px;

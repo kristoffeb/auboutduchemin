@@ -51,13 +51,35 @@
 
 	@media (max-width: 600px) {
 		.fixed-header {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			width: 100%;
 			padding: 12px 16px;
 			gap: 8px;
+			background-color: var(--paper);
+			background-image:
+				radial-gradient(
+					circle at 12% 14%,
+					color-mix(in srgb, var(--accent) 12%, transparent),
+					transparent 46%
+				),
+				radial-gradient(
+					circle at 88% 10%,
+					color-mix(in srgb, var(--ink) 8%, transparent),
+					transparent 34%
+				);
+			background-attachment: fixed;
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
 		}
 
 		.logo-link {
 			font-size: 13px;
 			line-height: 1.3;
+			flex: 1;
 		}
 	}
 
