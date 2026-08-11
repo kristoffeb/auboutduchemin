@@ -49,6 +49,18 @@
 		}
 	}
 
+	@media (max-width: 600px) {
+		.fixed-header {
+			padding: 12px 16px;
+			gap: 8px;
+		}
+
+		.logo-link {
+			font-size: 13px;
+			line-height: 1.3;
+		}
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.logo-link {
 			transition: none;

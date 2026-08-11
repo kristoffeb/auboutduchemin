@@ -376,6 +376,26 @@
 		}
 	}
 
+	@media (max-width: 600px) {
+		.menu-close {
+			top: 84px;
+			right: 0;
+			margin: 12px;
+		}
+
+		.menu-link {
+			font-size: clamp(1.5rem, 6vw, 3rem);
+		}
+
+		.menu-panel {
+			padding: 60px 16px 16px;
+		}
+
+		.menu-button {
+			padding: 6px 0 6px 6px;
+		}
+	}
+
 	.menu-close:hover {
 		transform: rotate(90deg);
 	}

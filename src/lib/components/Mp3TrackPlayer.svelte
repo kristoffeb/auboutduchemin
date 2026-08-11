@@ -1047,4 +1047,71 @@
 			font-size: 0.58rem;
 		}
 	}
+
+	@media (max-width: 480px) {
+		.playerButton {
+			left: 8px;
+			bottom: 18px;
+			width: 44px;
+			height: 44px;
+		}
+
+		.playerInfo {
+			left: 60px;
+			bottom: 18px;
+		}
+
+		.artistLabel {
+			font-size: 0.7rem;
+		}
+
+		.trackName {
+			font-size: 0.88rem;
+		}
+
+		.timelineBar {
+			left: 8px;
+			width: min(calc(100% - 16px), 340px);
+			bottom: 3px;
+		}
+
+		.trackErrorText {
+			left: 12px;
+			bottom: 48px;
+			font-size: 0.75rem;
+		}
+
+		.trackRow {
+			gap: 8px;
+			padding: 8px 8px 12px;
+		}
+
+		.trackRow.mode-rail {
+			gap: 8px;
+			padding: 8px 8px 12px;
+			max-width: 300px;
+		}
+
+		.trackText {
+			font-size: 0.82rem;
+		}
+
+		.playButton {
+			width: 36px;
+			height: 36px;
+			font-size: 14px;
+		}
+
+		.mode-rail .playButton {
+			width: 32px;
+			height: 32px;
+			font-size: 11px;
+		}
+
+		.muteButton {
+			height: 32px;
+			padding: 0 8px;
+			font-size: 0.62rem;
+		}
+	}
 </style>

@@ -67,4 +67,10 @@
 			padding-bottom: 142px;
 		}
 	}
+
+	@media (max-width: 600px) {
+		.staticPage {
+			padding-bottom: 120px;
+		}
+	}
 </style>
