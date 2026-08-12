@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
+	import { getPostGradientEndColor } from '$lib/post-gradient';
 	import { renderRichTextText } from '$lib/richtext';
 	import { buildNonRepeatingSeparatorIndices } from '$lib/post-separator';
 	import PostArticle from '$lib/components/PostArticle.svelte';
@@ -19,6 +20,9 @@
 	const tail = startIndex >= 0 ? allPosts.slice(startIndex + 1) : [];
 	const posts: any[] = post ? [post, ...tail] : tail;
 	const separatorIconIndices = buildNonRepeatingSeparatorIndices(posts);
+	const postGradientEndColors = new Map(
+		posts.map((feedPost) => [feedPost.slug, getPostGradientEndColor(feedPost)])
+	);
 
 	/** Shared across all feed players: true while the user wants audio to keep playing. */
 	const feedPlaybackStore = writable(false);
@@ -93,14 +97,13 @@
 		nextPostObserver = new IntersectionObserver(
 			(entries) => {
 				for (const entry of entries) {
-					if (entry.isIntersecting && canLoadOnIntersection) {
-						canLoadOnIntersection = false;
-						loadNextPost();
-					}
+					if (!entry.isIntersecting) continue;
+					if (!canLoadOnIntersection) continue;
+					if (entry.target !== lastObservedLoadNode) continue;
 
-					if (!entry.isIntersecting) {
-						canLoadOnIntersection = true;
-					}
+					canLoadOnIntersection = false;
+					nextPostObserver?.unobserve(entry.target);
+					loadNextPost();
 				}
 			},
 			{ threshold: 0, rootMargin: '0px 0px 0px 0px' }
@@ -138,7 +141,7 @@
 </script>
 
 <svelte:head>
-	<title>{postContent.title} — My Blog</title>
+	<title>Au Bout Du Chemin - {postContent.title}</title>
 
 	{#if metaDescriptionText}
 		<meta name="description" content={metaDescriptionText} />
@@ -160,6 +163,7 @@
 			<div
 				class="feedPost"
 				data-post-slug={feedPost.slug}
+				data-gradient-end-color={postGradientEndColors.get(feedPost.slug)}
 				data-background-transition-active={feedPost.slug === activeSlug ||
 				(!activeSlug && feedPost.slug === currentSlug)
 					? 'true'

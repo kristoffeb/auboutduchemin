@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { beforeNavigate } from '$app/navigation';
+	import { basePostGradientEndColor } from '$lib/post-gradient';
 	import '../app.css';
 	import Header from '$lib/Header.svelte';
 
@@ -26,7 +26,11 @@
 		const handleScroll = () => {
 			const html = document.documentElement;
 			const activePostElement = getActivePostElement();
+			const activePostGradientEndColor =
+				activePostElement?.dataset.gradientEndColor?.trim() || basePostGradientEndColor;
 			let scrollPercentage = 0;
+
+			html.style.setProperty('--post-gradient-end-color', activePostGradientEndColor);
 
 			if (activePostElement) {
 				const activePostTop = activePostElement.getBoundingClientRect().top + window.scrollY;

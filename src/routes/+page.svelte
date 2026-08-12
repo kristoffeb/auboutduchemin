@@ -2,19 +2,27 @@
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 	import PostArticle from '$lib/components/PostArticle.svelte';
+	import { getPostGradientEndColor } from '$lib/post-gradient';
 	import { buildNonRepeatingSeparatorIndices } from '$lib/post-separator';
 	import { renderRichTextText } from '$lib/richtext';
 
 	export let data;
 	const posts = data.posts ?? [];
 	const latestPost = posts[0] ?? null;
-	const metaDescriptionText = latestPost ? renderRichTextText(latestPost.content?.meta_description) : '';
+	const siteTitle = "Au Bout Du Chemin - Audioblog / Portfolio / Recueil d'émois";
+	const metaDescriptionText = latestPost
+		? renderRichTextText(latestPost.content?.meta_description)
+		: '';
 	const separatorIconIndices = buildNonRepeatingSeparatorIndices(posts);
+	const postGradientEndColors = new Map(
+		posts.map((post) => [post.slug, getPostGradientEndColor(post)])
+	);
 
 	/** Shared across all feed players: true while the user wants audio to keep playing. */
 	const feedPlaybackStore = writable(false);
+	let pageTitle = siteTitle;
 
-	let visiblePostsCount = latestPost ? 1 : 0;
+	let visiblePostsCount = posts.length;
 	const visibleRatios = new Map<string, number>();
 	const postElements = new Map<string, HTMLElement>();
 	let nextPostObserver: IntersectionObserver | undefined;
@@ -68,6 +76,12 @@
 		if (!candidateSlug || candidateSlug === activeSlug) return;
 
 		activeSlug = candidateSlug;
+		const activePostTitle =
+			posts.find((post) => post.slug === candidateSlug)?.content?.title ?? candidateSlug;
+		pageTitle =
+			candidateSlug === (posts[0]?.slug ?? '')
+				? siteTitle
+				: `Au Bout Du Chemin - ${activePostTitle}`;
 		document.documentElement.classList.remove('dark-transition');
 		window.dispatchEvent(new Event('scroll'));
 		// Keep the root URL for the first/initial post; only push a slug for subsequent ones.
@@ -90,14 +104,13 @@
 		nextPostObserver = new IntersectionObserver(
 			(entries) => {
 				for (const entry of entries) {
-					if (entry.isIntersecting && canLoadOnIntersection) {
-						canLoadOnIntersection = false;
-						loadNextPost();
-					}
+					if (!entry.isIntersecting) continue;
+					if (!canLoadOnIntersection) continue;
+					if (entry.target !== lastObservedLoadNode) continue;
 
-					if (!entry.isIntersecting) {
-						canLoadOnIntersection = true;
-					}
+					canLoadOnIntersection = false;
+					nextPostObserver?.unobserve(entry.target);
+					loadNextPost();
 				}
 			},
 			// Fire as soon as the last post's top edge (hero area) enters the visible viewport.
@@ -136,7 +149,7 @@
 </script>
 
 <svelte:head>
-	<title>My Blog</title>
+	<title>{pageTitle}</title>
 
 	{#if metaDescriptionText}
 		<meta name="description" content={metaDescriptionText} />
@@ -151,6 +164,7 @@
 			<div
 				class="feedPost"
 				data-post-slug={post.slug}
+				data-gradient-end-color={postGradientEndColors.get(post.slug)}
 				data-background-transition-active={post.slug === activeSlug ||
 				(!activeSlug && post.slug === latestPost.slug)
 					? 'true'

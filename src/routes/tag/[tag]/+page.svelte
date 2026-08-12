@@ -8,7 +8,7 @@
 </script>
 
 <svelte:head>
-	<title>Tag: {tag} — My Blog</title>
+	<title>Au Bout Du Chemin - Tag: {tag}</title>
 	<meta name="description" content={'Posts tagged ' + tag} />
 </svelte:head>
 

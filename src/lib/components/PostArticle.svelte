@@ -152,15 +152,55 @@
 			.filter((linkItem): linkItem is { href: string; label: string } => linkItem !== null);
 	}
 
+	function normalizeTextValue(value: unknown) {
+		return typeof value === 'string' ? value.trim() : '';
+	}
+
+	function splitArtistAndSong(value: string) {
+		const trimmedValue = value.trim();
+		if (!trimmedValue) return { artist: '', song: '' };
+
+		const splitMatch = trimmedValue.match(/^(.+?)\s+[–-]\s+(.+)$/);
+		if (!splitMatch) return { artist: '', song: '' };
+
+		return {
+			artist: splitMatch[1]?.trim() ?? '',
+			song: splitMatch[2]?.trim() ?? ''
+		};
+	}
+
+	function extractMp3Url(value: unknown) {
+		if (typeof value === 'string') return value.trim();
+		if (!value || typeof value !== 'object') return '';
+
+		const assetValue = value as {
+			filename?: unknown;
+			url?: unknown;
+			cached_url?: unknown;
+			href?: unknown;
+		};
+
+		return String(
+			assetValue.filename ?? assetValue.url ?? assetValue.cached_url ?? assetValue.href ?? ''
+		).trim();
+	}
+
 	const renderedRichTextHtml = postContent.text ? renderRichTextMarkup(postContent.text) : '';
 	const linkItemsArray = normalizeLinkItems(postContent.links ?? postContent.external_links);
 	const metaDescriptionHtml = renderRichTextMarkup(postContent.meta_description);
 	const postDateLabel = formatPostDateLabel(post);
 
-	const artistNameString = String(postContent.artist ?? '');
-	const songTitleString = String(postContent.song ?? '');
-	const mp3UrlString = String(postContent.mp3_file?.filename ?? '');
-	const hasTrackBoolean = Boolean(artistNameString && songTitleString && mp3UrlString);
+	const titleString = normalizeTextValue(postContent.title);
+	const artistFieldString = normalizeTextValue(postContent.artist);
+	const songFieldString = normalizeTextValue(postContent.song);
+	const parsedSongField = splitArtistAndSong(songFieldString);
+	const parsedTitleField = splitArtistAndSong(titleString);
+
+	const artistNameString = artistFieldString || parsedSongField.artist || parsedTitleField.artist;
+	const songTitleString =
+		songFieldString || parsedSongField.song || parsedTitleField.song || titleString;
+	const mp3UrlString = extractMp3Url(postContent.mp3_file);
+	const hasTrackBoolean = Boolean(mp3UrlString && (artistNameString || songTitleString));
 	const fallbackSeparatorIconIndex = getSeparatorBaseIndex(buildSeparatorSeed(post));
 	let selectedSeparatorIcon: SeparatorIcon = separatorIcons[fallbackSeparatorIconIndex];
 	$: selectedSeparatorIcon =

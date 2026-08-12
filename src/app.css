@@ -24,6 +24,7 @@
 	--paper: #eef2eb;
 	--paperShaded: #e4eae2;
 	--accent: #2f6759;
+	--post-gradient-end-color: #9ccc65;
 	--text: #15201d;
 	--mutedText: rgba(21, 32, 29, 0.66);
 	--linkUnderline: rgba(47, 103, 89, 0.32);
@@ -47,7 +48,7 @@ html {
 }
 
 html.dark-transition {
-	background-color: color-mix(in srgb, var(--paper) 85%, #9ccc65 15%);
+	background-color: color-mix(in srgb, var(--paper) 85%, var(--post-gradient-end-color) 15%);
 }
 
 body {

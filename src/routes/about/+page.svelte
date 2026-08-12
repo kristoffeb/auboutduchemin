@@ -14,7 +14,7 @@
 </script>
 
 <svelte:head>
-	<title>About — Au Bout Du Chemin</title>
+	<title>Au Bout Du Chemin - {aboutTitle}</title>
 	<meta name="description" content={metaDescriptionText || 'A propos de Au Bout Du Chemin.'} />
 </svelte:head>
 
